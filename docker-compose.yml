@@ -1,0 +1,44 @@
+name: template-mkdocs
+
+services:
+
+  template-mkdocs:
+    image: ghcr.io/tiogars/mkdocs-docker-image:latest
+    hostname: template-mkdocs
+    container_name: template-mkdocs
+    # build:
+    #   dockerfile: dockerfile
+    working_dir: /server/
+    volumes:
+      - ./docs:/server/docs
+      - ./mkdocs.yml:/server/mkdocs.yml
+    command: ["serve","--dev-addr=0.0.0.0:8000"]
+    environment:
+      - TZ=Europe/Paris
+
+      # restart only if asked in docker desktop
+    restart: unless-stopped
+
+    labels:
+      # https://github.com/tiogars/traefik
+      - "traefik.enable=true"
+      # && PathPrefix(`/docs`)"
+      - "traefik.http.routers.template-mkdocs.rule=Host(`template.mkdocs.tiogars.fr`)"
+      - "traefik.http.routers.template-mkdocs.entrypoints=websecure"
+      - "traefik.http.routers.template-mkdocs.tls.certresolver=myresolver"
+      - "traefik.http.routers.template-mkdocs.tls=true"
+      - "traefik.http.routers.template-mkdocs.service=template-mkdocs"
+      - "traefik.http.services.template-mkdocs.loadbalancer.server.port=8000"
+      - "traefik.docker.network=traefik_network"
+
+      # https://github.com/tiogars/flame
+      - "flame.type=application"
+      - "flame.name=template-mkdocs"
+      - "flame.url=https://template.mkdocs.tiogars.fr"
+      - "flame.icon=docker"
+    networks:
+      - traefik_network
+
+networks:
+  traefik_network:
+    external: true
